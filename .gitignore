@@ -147,6 +147,7 @@
 # All kinds of executables
 *.so
 *.so.*
+!libgmssl.so.1.0.0
 *.dylib
 *.dylib.*
 *.dll
