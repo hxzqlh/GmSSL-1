@@ -127,7 +127,11 @@ SYMLINK_SO=	\
 		fi; \
 	fi
 
-LINK_SO_A=	SHOBJECTS="lib$(LIBNAME).a $(LIBEXTRAS)"; $(LINK_SO)
+LINK_SO_A=	\
+	if [ "$(LIBNAME)" = "gmssl" ]; then \
+		SHOBJECTS="libcrypto.a $(LIBEXTRAS)"; else \
+	SHOBJECTS="lib$(LIBNAME).a $(LIBEXTRAS)"; \
+	fi; $(LINK_SO)
 LINK_SO_O=	SHOBJECTS="$(LIBEXTRAS)"; $(LINK_SO)
 
 LINK_SO_A_VIA_O=	\

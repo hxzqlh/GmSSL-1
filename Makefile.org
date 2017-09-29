@@ -340,11 +340,17 @@ clean-shared:
 
 link-shared:
 	@ set -e; for i in $(SHLIBDIRS); do \
+		if [ "$$i" = "crypto" ]; then \
+			$(MAKE) -f $(HERE)/Makefile.shared -e $(BUILDENV) \
+				LIBNAME=gmssl LIBVERSION=$(SHLIB_MAJOR).$(SHLIB_MINOR) \
+				LIBCOMPATVERSIONS=";$(SHLIB_VERSION_HISTORY)" \
+				symlink.$(SHLIB_TARGET); \
+			libs="$$libs -lgmssl"; else \
 		$(MAKE) -f $(HERE)/Makefile.shared -e $(BUILDENV) \
 			LIBNAME=$$i LIBVERSION=$(SHLIB_MAJOR).$(SHLIB_MINOR) \
 			LIBCOMPATVERSIONS=";$(SHLIB_VERSION_HISTORY)" \
 			symlink.$(SHLIB_TARGET); \
-		libs="$$libs -l$$i"; \
+		libs="$$libs -l$$i"; fi \
 	done
 
 build-shared: do_$(SHLIB_TARGET) link-shared
@@ -354,12 +360,19 @@ do_$(SHLIB_TARGET):
 		if [ "$$i" = "ssl" -a -n "$(LIBKRB5)" ]; then \
 			libs="$(LIBKRB5) $$libs"; \
 		fi; \
+		if [ "$$i" = "crypto" ]; then \
+			$(CLEARENV) && $(MAKE) -f Makefile.shared -e $(BUILDENV) \
+				LIBNAME=gmssl LIBVERSION=$(SHLIB_MAJOR).$(SHLIB_MINOR) \
+				LIBCOMPATVERSIONS=";$(SHLIB_VERSION_HISTORY)" \
+				LIBDEPS="$$libs $(EX_LIBS)" \
+				link_a.$(SHLIB_TARGET); \
+			libs="-lgmssl $$libs"; else \
 		$(CLEARENV) && $(MAKE) -f Makefile.shared -e $(BUILDENV) \
 			LIBNAME=$$i LIBVERSION=$(SHLIB_MAJOR).$(SHLIB_MINOR) \
 			LIBCOMPATVERSIONS=";$(SHLIB_VERSION_HISTORY)" \
 			LIBDEPS="$$libs $(EX_LIBS)" \
 			link_a.$(SHLIB_TARGET); \
-		libs="-l$$i $$libs"; \
+		libs="-l$$i $$libs"; fi \
 	done
 
 libcrypto.pc: Makefile
@@ -603,6 +616,8 @@ install_sw:
 	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/pkgconfig/libssl.pc
 	cp openssl.pc $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/pkgconfig
 	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/pkgconfig/openssl.pc
+	cp libgmssl.so.1.0.0 /usr/lib64
+	ln -s /usr/lib64/libgmssl.so.1.0.0 /usr/lib64/libgmssl.so
 
 install_html_docs:
 	here="`pwd`"; \
