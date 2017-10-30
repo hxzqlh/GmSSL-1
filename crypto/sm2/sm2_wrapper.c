@@ -146,8 +146,8 @@ void sm2_generate_key(const EC_GROUP* group, unsigned char *ucpPrivateKey, unsig
         ec_key = new_ec_key(group, NULL, 0);
         BN_bn2bin(EC_KEY_get0_private_key(ec_key), ucpPrivateKey);
         EC_POINT_get_affine_coordinates_GFp(group, EC_KEY_get0_public_key(ec_key), x, y, ctx);
-        BN_bn2bin(x, ucpPublicKey);
-        BN_bn2bin(y, ucpPublicKey+32);
+        BN_bn2bin(x, ucpPublicKey + 32 - BN_num_bytes(x));
+        BN_bn2bin(y, ucpPublicKey + 64 - BN_num_bytes(y));
     } while(0);
 
     if(x) BN_free(x);
@@ -175,8 +175,8 @@ void sm2_pubkey_from_privkey(const EC_GROUP* group, const unsigned char* ucpPriv
         ctx = BN_CTX_new();
         //EC_KEY_get0_public_key(ec_key);
         EC_POINT_get_affine_coordinates_GFp(group, EC_KEY_get0_public_key(ec_key), x, y, ctx);
-        BN_bn2bin(x, ucpPublicKey);
-        BN_bn2bin(y, ucpPublicKey+32);
+        BN_bn2bin(x, ucpPublicKey + 32 - BN_num_bytes(x));
+        BN_bn2bin(y, ucpPublicKey + 64 - BN_num_bytes(y));
     } while(0);
 
     if(x) BN_free(x);
@@ -209,7 +209,8 @@ void sm2_sign(EC_GROUP* group, unsigned char* ucpPrivateKey, unsigned char* ucpM
         if (!SM2_sign_v(ucpMessage, ilenMessage, ucpSignature + 1, &ilenSignature, &v, ec_key)) {
             return;
         }
-        ucpSignature[0] = v + 0x1B;
+        ucpSignature[0] = v;
+        ilenSignature += 1;
     } while(0);
 
     if(ec_key) EC_KEY_free(ec_key);
@@ -225,7 +226,7 @@ int sm2_recover(EC_GROUP* group, unsigned char* ucpSignature, unsigned char* ucp
 
     int ilenMessage = 32;
     int ilenPublicKey = 64;
-    int v = ucpSignature[0] - 0x1B;
+    int v = ucpSignature[0];
 
     return SM2_recover(group, ucpMessage, ilenMessage, ucpSignature + 1, 64, v, ucpPublicKey, &ilenPublicKey);
 }
